@@ -16,13 +16,13 @@ struct FBResult {
  * 
  * @param target_hash Hash SHA-256 objetivo en formato hexadecimal.
  * @param alphabet El conjunto de caracteres a utilizar (ej. "abcdefghijklmnopqrstuvwxyz").
- * @param max_length La longitud máxima de contraseña a intentar.
+ * @param length La longitud exacta de contraseña a intentar.
  * @return Estructura FBResult con el resultado y métricas.
  */
 FBResult search_by_brute_force(
     const std::string& target_hash,
     const std::string& alphabet,
-    int max_length);
+    int length);
 
 /**
  * Realiza un ataque basado en un archivo de diccionario.

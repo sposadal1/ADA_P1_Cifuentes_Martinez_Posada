@@ -13,7 +13,7 @@ FBResult search_by_brute_force(
                                 
     const std::string& alphabet, 
                                 
-    int max_length) {
+    int length) {
 
     auto start_time = std::chrono::high_resolution_clock::now();
     
@@ -25,26 +25,26 @@ FBResult search_by_brute_force(
     
     size_t base = alphabet.size();
 
-    // Probamos cada longitud k desde 1 hasta max_length
+   
 
-    for (int len = 1; len <= max_length; ++len) {
+    
 
         // Representamos el estado actual usando los índices de los caracteres en el alfabeto.
 
         // indices[0] es el carácter más a la izquierda, indices[len-1] el más a la derecha.
 
-        std::vector<size_t> indices(len, 0);
+        std::vector<size_t> indices(length, 0);
         
         // Calculamos el número total de combinaciones posibles para esta longitud: base^len
         long long combinations = 1;
-        for (int i = 0; i < len; ++i) {
+        for (int i = 0; i < length; ++i) {
             combinations *= base;
         }
         // Iteramos sistemáticamente por todas las combinaciones de longitud 'len'
         for (long long c = 0; c < combinations; ++c) {
             // Construimos la cadena candidata a partir de los índices actuales
             std::string candidate = "";
-            for (int i = 0; i < len; ++i) {
+            for (int i = 0; i < length; ++i) {
                 candidate += alphabet[indices[i]];
             }
             result.candidates_evaluated++;
@@ -58,7 +58,7 @@ FBResult search_by_brute_force(
             }
             // Incrementamos el contador posicional (aritmética en base |alphabet|)
             
-            for (int i = len - 1; i >= 0; --i) {
+            for (int i = length - 1; i >= 0; --i) {
                 indices[i]++;
                 if (indices[i] < base) {
                     break; // No hay llevada, terminamos de incrementar
@@ -67,10 +67,7 @@ FBResult search_by_brute_force(
                 }
             }
         }
-        if (result.found) {
-            break;
-        }
-    }
+        
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
     result.execution_time_ms = elapsed.count();
