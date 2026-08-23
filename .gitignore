@@ -1,0 +1,6 @@
+ada_p1
+tests/test_ref
+tests/test_semilla
+*.o
+*.exe
+Encontrada:

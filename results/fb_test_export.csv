@@ -1,0 +1,4 @@
+length_used,found,password,candidates_evaluated,execution_time_ms
+3,false,,46656,49.2454
+4,false,,1679616,1797.38
+5,true,abc12,50249,57.0406

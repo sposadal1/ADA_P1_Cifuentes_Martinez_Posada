@@ -1,1 +1,1 @@
-# Practica-Fuerza-Bruta-y-BackTracking
+# Práctica 1: Fuerza Bruta y Backtracking

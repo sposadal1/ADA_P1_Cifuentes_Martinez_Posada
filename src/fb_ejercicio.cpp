@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <cstdint>
 // Función auxiliar para calcular el hash SHA-256 usando picosha2
 std::string calculate_sha256(const std::string& input) {
 
@@ -69,9 +70,14 @@ FBResult search_by_brute_force(
         }
         
     auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
+    std::chrono::duration<double, 
+
+    std::milli> elapsed = end_time - start_time;
+
     result.execution_time_ms = elapsed.count();
     
+    result.length_used = length;
+
     return result;
 }
 FBResult search_by_dictionary(
@@ -128,4 +134,81 @@ FBResult search_by_dictionary(
     result.execution_time_ms = elapsed.count();
     
     return result;
+}
+
+long long calcular_semilla(const std::string& apellidos_concatenados) {
+    long long suma = 0;
+    for (char c : apellidos_concatenados) suma += static_cast<unsigned char>(c);
+    return suma % 100000;
+}
+
+std::vector<std::string> generar_passwords_equipo(
+    long long semilla,
+    const std::vector<std::string>& alfabetos_por_posicion) {
+
+    if (alfabetos_por_posicion.size() != 5) return {};
+
+    int longitudes[5] = {4, 4, 5, 5, 6};
+    uint64_t x = static_cast<uint64_t>(semilla);
+    const uint64_t a = 1103515245, c = 12345, mod = 1ULL << 31;
+
+    std::vector<std::string> passwords;
+    for (int p = 0; p < 5; ++p) {
+        std::string password;
+        const std::string& alfabeto = alfabetos_por_posicion[p];
+        for (int i = 0; i < longitudes[p]; ++i) {
+            x = (a * x + c) % mod;
+            password += alfabeto[x % alfabeto.size()];
+        }
+        passwords.push_back(password);
+    }
+    return passwords;
+}
+std::vector<FBResult> search_by_brute_force_range(
+    const std::string& target_hash,
+    const std::string& alphabet,
+    int min_length,
+    int max_length) {
+
+    std::vector<FBResult> resultados;
+    for (int len = min_length; len <= max_length; ++len) {
+        FBResult r = search_by_brute_force(target_hash, alphabet, len);
+        resultados.push_back(r);
+        if (r.found) break;
+    }
+    return resultados;
+}
+
+void export_fb_results_to_csv(
+    const std::vector<FBResult>& results,
+    const std::string& output_path) {
+
+    std::ofstream out(output_path);
+    if (!out.is_open()) {
+        std::cerr << "Error: no se pudo crear el archivo CSV " << output_path << std::endl;
+        return;
+    }
+
+    out << "length_used,found,password,candidates_evaluated,execution_time_ms\n";
+    for (const auto& r : results) {
+        out << r.length_used << ","
+            << (r.found ? "true" : "false") << ","
+            << r.password << ","
+            << r.candidates_evaluated << ","
+            << r.execution_time_ms << "\n";
+    }
+
+    out.close();
+}
+
+FBComparisonResult compare_brute_force_vs_dictionary(
+    const std::string& target_hash,
+    const std::string& alphabet,
+    int length,
+    const std::string& dictionary_path) {
+
+    FBComparisonResult comparison;
+    comparison.brute_force_result = search_by_brute_force(target_hash, alphabet, length);
+    comparison.dictionary_result = search_by_dictionary(target_hash, dictionary_path);
+    return comparison;
 }
