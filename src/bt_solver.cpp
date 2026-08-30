@@ -12,7 +12,7 @@ void BTSolver::backtrackFast(
     metrics.nodesGenerated++;
     int k = current.length();
 
-    // 1. Caso Base
+    // Caso Base
     if (k == policy.length) {
         if (low >= policy.minLower && up >= policy.minUpper && 
             dig >= policy.minDigit && sym >= policy.minSymbol) {
@@ -21,7 +21,7 @@ void BTSolver::backtrackFast(
         return;
     }
 
-    // 2. PODA GLOBAL INMEDIATA
+    // Poda
     int remaining = policy.length - k;
     int reqLow = (policy.minLower > low) ? (policy.minLower - low) : 0;
     int reqUp  = (policy.minUpper > up)  ? (policy.minUpper - up)  : 0;
@@ -35,7 +35,7 @@ void BTSolver::backtrackFast(
 
     char lastChar = k > 0 ? current.back() : '\0';
 
-    // 3. Expansión de estados
+    // Expansión de estados
     for (char c : alphabet) {
         if (policy.noConsecutiveDuplicates && k > 0 && c == lastChar) {
             metrics.nodesPruned++;
