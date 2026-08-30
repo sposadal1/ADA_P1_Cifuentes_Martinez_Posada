@@ -21,7 +21,7 @@ void BTSolver::backtrackFast(
         return;
     }
 
-    // Poda
+    // Poda Global
     int remaining = policy.length - k;
     int reqLow = (policy.minLower > low) ? (policy.minLower - low) : 0;
     int reqUp  = (policy.minUpper > up)  ? (policy.minUpper - up)  : 0;
