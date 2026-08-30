@@ -48,4 +48,4 @@ public:
     BTMetrics solveWithoutPruning();
 };
 
-#endif // BT_SOLVER_HPP
+#endif 
