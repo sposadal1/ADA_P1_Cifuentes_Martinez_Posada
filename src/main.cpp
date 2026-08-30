@@ -1,5 +1,7 @@
 #include "third_party/picosha2.h"
 #include "fb_ejercicio.hpp"
+#include "bt_solver.hpp"
+#include "bt_dp.hpp"
 #include <iostream>
 #include <string>
 
@@ -10,7 +12,7 @@ void run_fb_module() {
     std::string alphabet_ref = "abcdefghijklmnopqrstuvwxyz0123456789";
     std::string hash_ref = "8d51feb34e3e69f6fa6dffc577e2c60490cf9a7fcd835f9f6af1505b71d74773";
 
-    std::cout << "[Referencia] Buscando password para hash conocido (abc12/A2/n=5)...\n";
+    std::cout << "Buscando password para hash conocido...\n";
     FBResult ref_result = search_by_brute_force(hash_ref, alphabet_ref, 5);
 
     if (ref_result.found && ref_result.password == "abc12") {
@@ -21,25 +23,23 @@ void run_fb_module() {
         return;
     }
 
-     // 2. Alfabetos y orden de la práctica
+     // Alfabetos
     std::string A1 = "abcdefghijklmnopqrstuvwxyz";
     std::string A2 = "abcdefghijklmnopqrstuvwxyz0123456789";
     std::vector<std::string> alfabetos_equipo = {A1, A2, A1, A2, A1};
 
     int longitudes[5] = {4, 4, 5, 5, 6};
 
-    // 3. Apellidos del equipo concatenados ordenados alfabéticamente
-
     std::string apellidos_juntos = "cifuentesmartinezposada"; 
 
     long long semilla = calcular_semilla(apellidos_juntos);
 
-    std::cout << "Semilla del equipo (cifuentes, martinez, posada): " << semilla << "\n\n";
+    std::cout << "Semilla del equipo (Cifuentes, Martinez, Posada): " << semilla << "\n\n";
 
     // Generar las 5 contraseñas reales con el LCG
     std::vector<std::string> passwords_equipo = generar_passwords_equipo(semilla, alfabetos_equipo);
 
-    // 4. Ejecución de las 5 instancias (Fuerza Bruta vs Diccionario)
+    // Ejecucion de Fuerza Bruta
     std::vector<FBResult> resultados_fb;
     std::string ruta_diccionario = "resources/diccionario.txt";
 
@@ -61,7 +61,7 @@ void run_fb_module() {
 
                   << " | Alfabeto: " << nombre_alf << "\n";
 
-        // Ejecutar Fuerza Bruta Pura (retorna FBResult)
+
         FBResult res_fb = search_by_brute_force(hash_objetivo, alf_actual, len_actual);
         resultados_fb.push_back(res_fb);
 
@@ -78,15 +78,105 @@ void run_fb_module() {
 
                   << " | Tiempo: " << res_dic.execution_time_ms << " ms\n\n";
     }
-    // 5. Guardar resultados en el archivo CSV
+    // Guardar resultados en el archivo CSV
     export_fb_results_to_csv(resultados_fb, "results/fb_resultados.csv");
     std::cout << "[EXITO] Experimentos finalizados. Archivo 'results/fb_resultados.csv' generado.\n";
 }
 
-
 void run_bt_module() {
-    std::cout << "=== Modulo Backtracking ===\n";
-    std::cout << ".\n";
+    std::cout << "=== Modulo Backtracking ===\n\n";
+
+    std::string alphabet =
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789"
+        "!@#$%";
+
+    std::cout << std::fixed;
+    std::cout.precision(3);
+
+    // Generar la semilla
+
+    std::string apellidos_juntos = "cifuentesmartinezposada";
+    long long semilla = calcular_semilla(apellidos_juntos);
+
+    int pol_minLower = 2 + (semilla % 3);
+    int pol_minUpper = 1 + (semilla % 2);
+    int pol_minDigit = 1 + (semilla % 3);
+    int pol_minSymbol = 1;
+
+    std::cout << "Semilla del equipo: " << semilla << "\n";
+    std::cout << "Politica original: minLower=" << pol_minLower 
+              << ", minUpper=" << pol_minUpper 
+              << ", minDigit=" << pol_minDigit 
+              << ", minSymbol=" << pol_minSymbol << "\n\n";
+
+    // Función auxiliar para correr y medir una instancia
+    auto ejecutar_instancia = [&](const std::string& nombre, const Policy& p, bool correr_sin_poda) {
+        std::cout << "--- " << nombre << " (n=" << p.length << ") ---\n";
+        
+        BTSolver solver(alphabet, p);
+        long long conteo_dp = countSolutionsDP(alphabet, p);
+        
+        std::cout << "Soluciones exactas (DP): " << conteo_dp << "\n";
+
+        // Ejecutar Con Poda
+        std::cout << "Ejecutando con Poda...\n";
+        BTMetrics mCon = solver.solveWithPruning();
+        std::cout << "  Nodos generados : " << mCon.nodesGenerated << "\n"
+                  << "  Nodos podados   : " << mCon.nodesPruned << "\n"
+                  << "  Soluciones      : " << mCon.solutionsFound << "\n"
+                  << "  Tiempo          : " << mCon.executionTimeMs << " ms\n";
+
+        // Ejecutar sin Poda
+        if (correr_sin_poda) {
+            std::cout << "Ejecutando sin Poda...\n";
+            BTMetrics mSin = solver.solveWithoutPruning();
+            std::cout << "  Nodos generados : " << mSin.nodesGenerated << "\n"
+                      << "  Soluciones      : " << mSin.solutionsFound << "\n"
+                      << "  Tiempo          : " << mSin.executionTimeMs << " ms\n";
+            
+            double reduccion = (1.0 - (double)mCon.nodesGenerated / (double)mSin.nodesGenerated) * 100.0;
+            std::cout << "  Reduccion del espacio de busqueda: " << reduccion << " %\n";
+        }
+        std::cout << "\n";
+    };
+
+    Policy pRef = {6, 2, 1, 1, 1, true};
+    ejecutar_instancia("0. Instancia de Referencia", pRef, true); // True: Correr con y sin poda
+
+    // Preparación para las variantes del equipo: Ajuste de minLower si supera n
+    int minLower_n8 = pol_minLower;
+    if ((minLower_n8 + pol_minUpper + pol_minDigit + pol_minSymbol) > 8) {
+        minLower_n8 -= ((minLower_n8 + pol_minUpper + pol_minDigit + pol_minSymbol) - 8);
+    }
+    
+    int minLower_n6 = pol_minLower;
+    if ((minLower_n6 + pol_minUpper + pol_minDigit + pol_minSymbol) > 6) {
+        minLower_n6 -= ((minLower_n6 + pol_minUpper + pol_minDigit + pol_minSymbol) - 6);
+    }
+
+
+    Policy p1 = {8, minLower_n8, pol_minUpper, pol_minDigit, pol_minSymbol, true};
+    ejecutar_instancia("Politica completa del equipo", p1, false); // False: Solo con poda 
+
+    // n=6
+    Policy p2 = {6, minLower_n6, pol_minUpper, pol_minDigit, pol_minSymbol, true};
+    ejecutar_instancia("n=6", p2, true); // True: Correr con y sin poda para comparar
+
+    // n=10
+    Policy p3 = {10, pol_minLower, pol_minUpper, pol_minDigit, pol_minSymbol, true};
+    ejecutar_instancia("n=10", p3, false); // False: Solo con poda
+
+    // Política relajada, n=8
+    Policy p4 = {8, 1, 0, 0, 0, false};
+    ejecutar_instancia("Politica relajada, n=8", p4, false); // False: Solo con poda
+
+    // Política sin restricciones, n=6
+    Policy p5 = {6, 0, 0, 0, 0, false};
+    ejecutar_instancia("Politica sin restricciones (Poda nula)", p5, true); // True: Para calibrar la poda nula
+
+    std::cout << "[EXITO] Modulo Backtracking finalizado.\n";
 }
 
 int main(int argc, char* argv[]) {
