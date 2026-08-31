@@ -1,4 +1,4 @@
-# Practica 1: Fuerza Bruta y Backtracking - Contrasenas bajo ataque y bajo diseno
+# Practica 1: Fuerza Bruta y Backtracking 
 
 Este repositorio contiene la solucion tecnica, experimentos e informe final correspondiente a la Practica 1 del curso Analisis y Diseno de Algoritmos (ADA).
 
